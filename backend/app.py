@@ -1,11 +1,14 @@
-from flask import Flask, redirect, url_for, session
+from flask import Flask, redirect, url_for, session, jsonify
 from authlib.integrations.flask_client import OAuth
 from authlib.common.security import generate_token
 import os
+import requests
+from flask_cors import CORS
 
 app = Flask(__name__)
 app.secret_key = os.urandom(24)
-
+api_key = os.getenv('NYT_API_KEY')
+CORS(app)
 
 oauth = OAuth(app)
 
