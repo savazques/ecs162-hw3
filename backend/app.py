@@ -52,5 +52,14 @@ def logout():
     session.clear()
     return redirect('/')
 
+@app.route('/getArticles')
+def get_article():
+    try:
+        response = requests.get(f'https://api.nytimes.com/svc/search/v2/articlesearch.json?q="Sacramento" or "Davis"&api-key={api_key}')
+        data = response.json()
+        return jsonify(data)
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=8000)
