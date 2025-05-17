@@ -14,8 +14,17 @@
     };
   }
 
+  // interface Comments {
+  //   user:string;
+  //   text: string;
+  //   datePosted: number;
+  //   deleted: string;
+
+  // }
+
   let articles: ArticalResponse | null = null;
   let topArticles: Article[] = [];
+  // let comments = Comments[] = [];
   let loading = true;
   let error = "";
   let isSidebarOpen = false;
@@ -37,6 +46,35 @@
     selectedArticle = null;
   }
 
+  let inputValue = '';
+
+  async function handleCommentSubmit() {
+    console.log("clicked the comment submission")
+    console.log(inputValue);
+    
+
+    try {
+      await fetch("http://localhost:8000/addComment", {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          user: '1',
+          text: inputValue,
+          datePosted: 'Today at this time',
+          deleted: 'No'
+        })
+      })
+    }
+    catch (error) {
+      console.error("error submitting form", error)
+    }
+
+
+    inputValue = ''
+  }
+
   onMount(async () => {
     try {
       const response = await fetch("http://localhost:8000/getArticles");
@@ -52,6 +90,8 @@
       }
 
       loading = false;
+
+      // fetch comments
     } catch (error) {
       console.error("Failed to fetch articles:", error);
       error = error instanceof Error ? error.message : "Unknown error occurred";
@@ -198,8 +238,11 @@
     <button class="close-button" on:click={closeSidebar}>×</button>
     <h3>Add Comment</h3>
     <div class="comment-form">
-      <textarea placeholder="Write your comment here..."></textarea>
-      <button class="submit-button">Submit</button>
+      <form on:submit|preventDefault={handleCommentSubmit}>
+        <input name="Write Something" type=text bind:value={inputValue}/>
+        <button class="submit-button" type="submit" >Submit</button>
+      </form>
+      
     </div>
   </div>
 {/if}
