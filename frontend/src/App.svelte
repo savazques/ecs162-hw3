@@ -13,6 +13,7 @@
         url: string;
       };
     };
+    commentCount: number;
   }
 
   interface Comment {
@@ -42,19 +43,15 @@
     };
   }
 
-  async function loadComments(selectedArticle: Article | null) {
+  async function loadComments(selectedArticle: string | null) {
     if (!selectedArticle) return;
     try {
-      let currArticleId = selectedArticle._id;
-      let currArticleIdTitle = selectedArticle.headline.main;
-      console.log(currArticleId);
-      console.log(currArticleIdTitle);
-
       const response = await fetch(
-        `http://localhost:8000/fetchComments/${currArticleId}`
+        `http://localhost:8000/fetchComments/${selectedArticle}`
       );
       const fetchedComments = await response.json();
       comments = fetchedComments;
+      return comments;
     } catch (error) {
       console.error("An Error Occured fetching comments");
     }
@@ -65,7 +62,9 @@
       await fetch(`http://localhost:8000/deleteComment/${id}`, {
         method: "DELETE",
       });
-      loadComments(selectedArticle);
+      if (selectedArticle) {
+        loadComments(selectedArticle._id);
+      }
     } catch (error) {
       console.error("Error Deleting Comment");
     }
@@ -73,9 +72,8 @@
 
   function openSidebar(article: Article) {
     selectedArticle = article;
-    console.log(article.headline);
     isSidebarOpen = true;
-    loadComments(selectedArticle);
+    loadComments(selectedArticle._id);
     inputValue = "";
   }
 
@@ -85,6 +83,18 @@
   }
 
   let inputValue = "";
+
+  async function articleCommentCount(articleId: string) {
+    // call fetch article, with given articlename
+    // get the length of the response
+    // set that to commentCount for each article
+    console.log(articleId);
+    let totalComments = await loadComments(articleId);
+    if (totalComments) {
+      return totalComments.length;
+    }
+    return 0;
+  }
 
   async function handleCommentSubmit() {
     console.log("clicked the comment submission");
@@ -105,12 +115,22 @@
         }),
       });
       commentID += 1;
+
+      // Update the comment count for the selected article
+      if (selectedArticle) {
+        selectedArticle.commentCount += 1;
+        const index = topArticles.findIndex(
+          (article) => article._id === selectedArticle!._id
+        );
+        if (index !== -1) {
+          topArticles[index].commentCount = selectedArticle.commentCount;
+        }
+      }
     } catch (error) {
       console.error("error submitting form", error);
     }
-
     inputValue = "";
-    loadComments(selectedArticle);
+    loadComments(selectedArticle?._id ?? null);
   }
 
   onMount(async () => {
@@ -123,7 +143,11 @@
 
       if (articles?.response?.docs) {
         for (let i = 0; i < 6; i++) {
+          articles.response.docs[i].commentCount = await articleCommentCount(
+            articles?.response.docs[i]._id
+          );
           topArticles.push(articles?.response.docs[i]);
+          //console.log(await articleCommentCount(articles?.response.docs[i]._id))
         }
       }
 
@@ -169,7 +193,22 @@
           class="comment-button"
           on:click={() => openSidebar(topArticles[0])}
         >
-          Add Comment
+          <span class="comment-count">{topArticles[0].commentCount}</span>
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="24"
+            height="24"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <path
+              d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"
+            ></path>
+          </svg>
         </button>
       </div>
 
@@ -187,7 +226,22 @@
           class="comment-button"
           on:click={() => openSidebar(topArticles[1])}
         >
-          Add Comment
+          <span class="comment-count">{topArticles[1].commentCount}</span>
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="24"
+            height="24"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <path
+              d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"
+            ></path>
+          </svg>
         </button>
       </div>
 
@@ -205,7 +259,22 @@
           class="comment-button"
           on:click={() => openSidebar(topArticles[2])}
         >
-          Add Comment
+          <span class="comment-count">{topArticles[2].commentCount}</span>
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="24"
+            height="24"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <path
+              d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"
+            ></path>
+          </svg>
         </button>
       </div>
 
@@ -223,7 +292,22 @@
           class="comment-button"
           on:click={() => openSidebar(topArticles[3])}
         >
-          Add Comment
+          <span class="comment-count">{topArticles[3].commentCount}</span>
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="24"
+            height="24"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <path
+              d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"
+            ></path>
+          </svg>
         </button>
       </div>
 
@@ -241,7 +325,22 @@
           class="comment-button"
           on:click={() => openSidebar(topArticles[4])}
         >
-          Add Comment
+          <span class="comment-count">{topArticles[4].commentCount}</span>
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="24"
+            height="24"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <path
+              d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"
+            ></path>
+          </svg>
         </button>
       </div>
 
@@ -259,7 +358,22 @@
           class="comment-button"
           on:click={() => openSidebar(topArticles[5])}
         >
-          Add Comment
+          <span class="comment-count">{topArticles[5].commentCount}</span>
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="24"
+            height="24"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <path
+              d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"
+            ></path>
+          </svg>
         </button>
       </div>
     </div>
@@ -273,7 +387,13 @@
   <div class="sidebar">
     <button class="close-button" on:click={closeSidebar}>×</button>
     <h2>{selectedArticle?.headline.main}</h2>
-    <h3>Add Comment</h3>
+    <div class="sidebar-title-line"></div>
+    <h3 class="comment-heading">
+      Comments <span class="comment-count"
+        >{comments.filter((c) => c.articleID === selectedArticle?._id)
+          .length}</span
+      >
+    </h3>
     <div class="comment-form">
       <form on:submit|preventDefault={handleCommentSubmit}>
         <input
@@ -302,7 +422,8 @@
               </button>
             {/if}
           {:else}
-            <p>Comment was deleted by moderator</p>
+            <p class="user">{comment.user}</p>
+            <p class="deleted-text">Comment was deleted by moderator</p>
           {/if}
         </div>
       {/each}
