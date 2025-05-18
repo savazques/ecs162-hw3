@@ -14,17 +14,19 @@
     };
   }
 
-  // interface Comments {
-  //   user:string;
-  //   text: string;
-  //   datePosted: number;
-  //   deleted: string;
+  interface Comment {
+    user:string;
+    text: string;
+    datePosted: number;
+    deleted: boolean;
 
-  // }
+  }
+
+  let comments: Comment[] = [];
 
   let articles: ArticalResponse | null = null;
   let topArticles: Article[] = [];
-  // let comments = Comments[] = [];
+  // let totalcomments: Comment = ;
   let loading = true;
   let error = "";
   let isSidebarOpen = false;
@@ -36,9 +38,29 @@
     };
   }
 
+ 
+
+
+  async function loadComments () {
+    try{
+      const response = await fetch("http://localhost:8000/fetchComments")
+
+      const fetchedComments = await response.json();
+
+      comments = fetchedComments;
+
+
+    } catch (error) {
+      console.error("An Error Occured fetching comments")
+    } 
+      
+
+  }
+
   function openSidebar(article: Article) {
     selectedArticle = article;
     isSidebarOpen = true;
+    loadComments(); 
   }
 
   function closeSidebar() {
@@ -70,6 +92,7 @@
     }
 
     inputValue = "";
+    loadComments();
   }
 
   onMount(async () => {
@@ -88,7 +111,6 @@
 
       loading = false;
 
-      // fetch comments
     } catch (error) {
       console.error("Failed to fetch articles:", error);
       error = error instanceof Error ? error.message : "Unknown error occurred";
@@ -239,6 +261,14 @@
         <input name="Write Something" type="text" bind:value={inputValue} />
         <button class="submit-button" type="submit">Submit</button>
       </form>
+    </div>
+    <div class="comment-container">
+      {#each comments as comment}
+          <p> {comment.user}</p>
+          <p> {comment.text}</p>
+          <p> {comment.datePosted}</p>
+      {/each}
+
     </div>
   </div>
 {/if}
