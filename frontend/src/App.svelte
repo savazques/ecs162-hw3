@@ -46,33 +46,30 @@
     selectedArticle = null;
   }
 
-  let inputValue = '';
+  let inputValue = "";
 
   async function handleCommentSubmit() {
-    console.log("clicked the comment submission")
+    console.log("clicked the comment submission");
     console.log(inputValue);
-    
 
     try {
       await fetch("http://localhost:8000/addComment", {
-        method: 'POST',
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json'
+          "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          user: '1',
+          user: "1",
           text: inputValue,
-          datePosted: 'Today at this time',
-          deleted: 'No'
-        })
-      })
-    }
-    catch (error) {
-      console.error("error submitting form", error)
+          datePosted: "Today at this time",
+          deleted: "No",
+        }),
+      });
+    } catch (error) {
+      console.error("error submitting form", error);
     }
 
-
-    inputValue = ''
+    inputValue = "";
   }
 
   onMount(async () => {
@@ -239,10 +236,9 @@
     <h3>Add Comment</h3>
     <div class="comment-form">
       <form on:submit|preventDefault={handleCommentSubmit}>
-        <input name="Write Something" type=text bind:value={inputValue}/>
-        <button class="submit-button" type="submit" >Submit</button>
+        <input name="Write Something" type="text" bind:value={inputValue} />
+        <button class="submit-button" type="submit">Submit</button>
       </form>
-      
     </div>
   </div>
 {/if}

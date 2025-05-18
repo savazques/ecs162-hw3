@@ -79,6 +79,14 @@ def get_article():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
+@app.route('/fetchComments')
+def get_comments():
+    try:
+        comments = list(collection.find({}, {'_id': 0}))  
+        return jsonify(comments)
+    except Exception as e: 
+        return jsonify({'error': str(e)}), 500
+
 @app.route('/addComment', methods=['POST'])
 def add_comment():
     data = request.get_json()
