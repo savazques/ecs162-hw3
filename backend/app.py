@@ -95,6 +95,15 @@ def add_comment():
 
     return jsonify("data added")
 
+@app.route('/deleteComment/<int:commentId>', methods=['DELETE'])
+def delete_comment(commentId):
+    try:
+        result = collection.update_one( {'commentId': commentId}, {'$set':{'deleted': True}})
+        return jsonify(result.matched_count)
+
+    except Exception as e: 
+        return jsonify({'error': str(e)}), 500
+
 
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=8000)

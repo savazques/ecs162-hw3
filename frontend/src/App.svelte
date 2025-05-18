@@ -3,6 +3,7 @@
   import Date from "./Date.svelte";
   import logo from "./assets/NewYorkTimes.svg.png";
   import "./app.css";
+  import { stringify } from "postcss";
 
   interface Article {
     headline: { main: string };
@@ -15,14 +16,15 @@
   }
 
   interface Comment {
-    user:string;
+    commentId: number;
+    user:string; // will be updated to User Interface 
     text: string;
     datePosted: number;
     deleted: boolean;
-
   }
 
   let comments: Comment[] = [];
+  let commentID = 0;
 
   let articles: ArticalResponse | null = null;
   let topArticles: Article[] = [];
@@ -39,22 +41,28 @@
   }
 
  
-
-
   async function loadComments () {
     try{
-      const response = await fetch("http://localhost:8000/fetchComments")
-
+      const response = await fetch(`http://localhost:8000/fetchComments`)
       const fetchedComments = await response.json();
-
       comments = fetchedComments;
-
+      //console.log(comments[0])
 
     } catch (error) {
       console.error("An Error Occured fetching comments")
     } 
-      
+  }
 
+  async function deleteComment (id:number) {
+    try {
+      await fetch(`http://localhost:8000/deleteComment/${id}`, {
+        method: 'DELETE'
+      })
+      loadComments();
+      
+    } catch (error) {
+      console.error("Error Deleting Comment")
+    }
   }
 
   function openSidebar(article: Article) {
@@ -81,12 +89,14 @@
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          user: "1",
+          commentId: commentID,
+          user: "User sfsths",
           text: inputValue,
           datePosted: "Today at this time",
-          deleted: "No",
+          deleted: false,
         }),
       });
+      commentID += 1; 
     } catch (error) {
       console.error("error submitting form", error);
     }
@@ -252,7 +262,7 @@
 </main>
 
 {#if isSidebarOpen}
-  <div class="sidebar-overlay" on:click={closeSidebar}></div>
+  <div class="sidebar-overlay"> </div>
   <div class="sidebar">
     <button class="close-button" on:click={closeSidebar}>×</button>
     <h3>Add Comment</h3>
@@ -264,10 +274,15 @@
     </div>
     <div class="comment-container">
       {#each comments as comment}
+        {#if comment.deleted === false}
           <p> {comment.user}</p>
           <p> {comment.text}</p>
           <p> {comment.datePosted}</p>
+          <button on:click={() => {console.log('comment to delete', comment.commentId); deleteComment(comment.commentId)}}> Delete Comment </button>
+        {/if}
+
       {/each}
+     
 
     </div>
   </div>
