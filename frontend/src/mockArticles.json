@@ -1,0 +1,50 @@
+[
+  {
+    "_id": "nyt-1",
+    "headline": { "main": "Breaking News: Svelte Takes Over" },
+    "abstract": "Svelte is now the most popular framework in the world.",
+    "multimedia": { "default": { "url": "" } },
+    "commentCount": 0,
+    "alt": "Svelte logo"
+  },
+  {
+    "_id": "nyt-2",
+    "headline": { "main": "JavaScript: The Good Parts" },
+    "abstract": "A deep dive into the best features of JavaScript.",
+    "multimedia": { "default": { "url": "" } },
+    "commentCount": 0,
+    "alt": "JavaScript logo"
+  },
+  {
+    "_id": "nyt-3",
+    "headline": { "main": "Frontend Frameworks in 2024" },
+    "abstract": "Comparing the top frontend frameworks of the year.",
+    "multimedia": { "default": { "url": "" } },
+    "commentCount": 0,
+    "alt": "Framework logos"
+  },
+  {
+    "_id": "nyt-4",
+    "headline": { "main": "TypeScript: Why You Should Care" },
+    "abstract": "TypeScript adoption is on the rise for good reason.",
+    "multimedia": { "default": { "url": "" } },
+    "commentCount": 0,
+    "alt": "TypeScript logo"
+  },
+  {
+    "_id": "nyt-5",
+    "headline": { "main": "Web Accessibility Matters" },
+    "abstract": "Making the web accessible for everyone.",
+    "multimedia": { "default": { "url": "" } },
+    "commentCount": 0,
+    "alt": "Accessibility icon"
+  },
+  {
+    "_id": "nyt-6",
+    "headline": { "main": "The Future of CSS" },
+    "abstract": "What's next for Cascading Style Sheets?",
+    "multimedia": { "default": { "url": "" } },
+    "commentCount": 0,
+    "alt": "CSS logo"
+  }
+] 

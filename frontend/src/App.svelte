@@ -2,8 +2,11 @@
   import { onMount } from "svelte";
   import Date from "./Date.svelte";
   import logo from "./assets/NewYorkTimes.svg.png";
+  import "./app.css";
+  import mockArticles from "./mockArticles.json";
 
   interface Article {
+    _id: string;
     headline: { main: string };
     abstract: string;
     multimedia: {
@@ -11,12 +14,34 @@
         url: string;
       };
     };
+    commentCount: number;
   }
+
+  interface Comment {
+    commentId: number;
+    user: string;
+    text: string;
+    datePosted: number;
+    deleted: boolean;
+    articleID: string;
+    parentId?: number; // for replies
+    replies?: Comment[]; // for nested replies
+  }
+  let userType = ""; // update this later when login logic is done
+
+  let comments: Comment[] = [];
+  let commentID = 0;
 
   let articles: ArticalResponse | null = null;
   let topArticles: Article[] = [];
+  // let totalcomments: Comment = ;
   let loading = true;
   let error = "";
+  let isSidebarOpen = false;
+  let selectedArticle: Article | null = null;
+
+  let replyingTo: number | null = null;
+  let replyInputValue: string = "";
 
   interface ArticalResponse {
     response: {
@@ -24,29 +49,158 @@
     };
   }
 
-  onMount(async () => {
+  async function loadComments(selectedArticle: string | null) {
+    if (!selectedArticle) return;
     try {
-      const response = await fetch("http://localhost:8000/getArticles");
-      console.log(response.json);
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-      articles = await response.json();
-      console.log("Articles:", articles);
+      const response = await fetch(
+        `http://localhost:8000/fetchComments/${selectedArticle}`
+      );
+      const fetchedComments = await response.json();
+      comments = fetchedComments;
+      return comments;
+    } catch (error) {
+      console.error("An Error Occured fetching comments");
+    }
+  }
 
-      if (articles?.response?.docs) {
-        for (let i = 0; i < 6; i++) {
-          topArticles.push(articles?.response.docs[i]);
-          console.log(topArticles);
+  async function deleteComment(id: number) {
+    try {
+      await fetch(`http://localhost:8000/deleteComment/${id}`, {
+        method: "DELETE",
+      });
+      if (selectedArticle) {
+        loadComments(selectedArticle._id);
+      }
+    } catch (error) {
+      console.error("Error Deleting Comment");
+    }
+  }
+
+  function openSidebar(article: Article) {
+    selectedArticle = article;
+    isSidebarOpen = true;
+    loadComments(selectedArticle._id);
+    inputValue = "";
+  }
+
+  function closeSidebar() {
+    isSidebarOpen = false;
+    selectedArticle = null;
+  }
+
+  let inputValue = "";
+
+  async function articleCommentCount(articleId: string) {
+    // call fetch article, with given articlename
+    // get the length of the response
+    // set that to commentCount for each article
+    console.log(articleId);
+    let totalComments = await loadComments(articleId);
+    if (totalComments) {
+      return totalComments.length;
+    }
+    return 0;
+  }
+
+  async function handleCommentSubmit() {
+    console.log("clicked the comment submission");
+
+    try {
+      await fetch("http://localhost:8000/addComment", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          commentId: commentID,
+          user: "User sfsths",
+          text: inputValue,
+          datePosted: "Today at this time",
+          deleted: false,
+          articleID: selectedArticle?._id,
+        }),
+      });
+      commentID += 1;
+
+      // Update the comment count for the selected article
+      if (selectedArticle) {
+        selectedArticle.commentCount += 1;
+        const index = topArticles.findIndex(
+          (article) => article._id === selectedArticle!._id
+        );
+        if (index !== -1) {
+          topArticles[index].commentCount = selectedArticle.commentCount;
         }
       }
-
-      loading = false;
     } catch (error) {
-      console.error("Failed to fetch articles:", error);
-      error = error instanceof Error ? error.message : "Unknown error occurred";
-      loading = false;
+      console.error("error submitting form", error);
     }
+    inputValue = "";
+    loadComments(selectedArticle?._id ?? null);
+  }
+
+  async function handleReplySubmit(parentId: number) {
+    try {
+      await fetch("http://localhost:8000/addComment", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          commentId: commentID,
+          user: "User sfsths",
+          text: replyInputValue,
+          datePosted: "Today at this time",
+          deleted: false,
+          articleID: selectedArticle?._id,
+          parentId: parentId,
+        }),
+      });
+      commentID += 1;
+      replyInputValue = "";
+      replyingTo = null;
+      loadComments(selectedArticle?._id ?? null);
+    } catch (error) {
+      console.error("error submitting reply", error);
+    }
+  }
+
+  function getReplies(parentId: number) {
+    return comments.filter(
+      (c) => c.parentId === parentId && c.articleID === selectedArticle?._id
+    );
+  }
+// FOR WHEN WE ARE USING THE API ENDPOING
+//   // onMount(async () => {
+//   try {
+//     const response = await fetch("http://localhost:8000/getArticles");
+//     if (!response.ok) {
+//       throw new Error(`HTTP error! status: ${response.status}`);
+//     }
+//     articles = await response.json();
+
+//     if (articles?.response?.docs) {
+//       // Optionally, fetch comment counts for each article
+//       for (let i = 0; i < 6; i++) {
+//         articles.response.docs[i].commentCount = await articleCommentCount(
+//           articles?.response.docs[i]._id
+//         );
+//         topArticles.push(articles?.response.docs[i]);
+//       }
+//     }
+
+//     loading = false;
+//   } catch (error) {
+//     console.error("Failed to fetch articles:", error);
+//     error = error instanceof Error ? error.message : "Unknown error occurred";
+//     loading = false;
+//   }
+// // });
+
+  onMount(() => {
+    articles = { response: { docs: mockArticles } };
+    topArticles = mockArticles;
+    loading = false;
   });
 </script>
 
@@ -72,100 +226,334 @@
     <div class="grid-container" data-testid="grid-container">
       <div class="article1">
         {#if topArticles[0]?.multimedia.default.url}
-          <img src={topArticles[0]?.multimedia.default.url} alt="article1" />
+          <img
+            src={topArticles[0]?.multimedia.default.url}
+            alt={topArticles[0]?.headline?.main}
+          />
+        {:else}
+          <div class="alt-text">{topArticles[0]?.headline?.main}</div>
         {/if}
-
-        <h2>
-          {topArticles[0]?.headline?.main || "Loading..."}
-        </h2>
+        <h2>{topArticles[0]?.headline?.main || "Loading..."}</h2>
         <div class="read-text">6 min read</div>
         <div>
-          <p>
-            {topArticles[0]?.abstract || "No abstract available"}
-          </p>
+          <p>{topArticles[0]?.abstract || "No abstract available"}</p>
         </div>
+        <button
+          class="comment-button"
+          on:click={() => openSidebar(topArticles[0])}
+        >
+          <span class="comment-count">{topArticles[0].commentCount}</span>
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="24"
+            height="24"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <path
+              d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"
+            ></path>
+          </svg>
+        </button>
       </div>
 
       <div class="article2">
         <div class="line"></div>
         {#if topArticles[1]?.multimedia.default.url}
-          <img src={topArticles[1]?.multimedia.default.url} alt="article1" />
+          <img
+            src={topArticles[1]?.multimedia.default.url}
+            alt={topArticles[1]?.headline?.main}
+          />
+        {:else}
+          <div class="alt-text">{topArticles[1]?.headline?.main}</div>
         {/if}
-
         <h1>{topArticles[1]?.headline?.main}</h1>
         <div class="read-text">5 min read</div>
-
         <div>
-          <p>
-            {topArticles[1]?.abstract}
-          </p>
+          <p>{topArticles[1]?.abstract}</p>
         </div>
+        <button
+          class="comment-button"
+          on:click={() => openSidebar(topArticles[1])}
+        >
+          <span class="comment-count">{topArticles[1].commentCount}</span>
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="24"
+            height="24"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <path
+              d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"
+            ></path>
+          </svg>
+        </button>
       </div>
 
       <div class="article3">
         <div class="line"></div>
         {#if topArticles[2]?.multimedia.default.url}
-          <img src={topArticles[2]?.multimedia.default.url} alt="article1" />
+          <img
+            src={topArticles[2]?.multimedia.default.url}
+            alt={topArticles[2]?.headline?.main}
+          />
+        {:else}
+          <div class="alt-text">{topArticles[2]?.headline?.main}</div>
         {/if}
-
-        <p class="articleTitle">
-          {topArticles[2]?.headline?.main}
-        </p>
+        <p class="articleTitle">{topArticles[2]?.headline?.main}</p>
         <div class="read-text">10 min read</div>
-
         <div>
-          <p>
-            {topArticles[2]?.abstract}
-          </p>
+          <p>{topArticles[2]?.abstract}</p>
         </div>
+        <button
+          class="comment-button"
+          on:click={() => openSidebar(topArticles[2])}
+        >
+          <span class="comment-count">{topArticles[2].commentCount}</span>
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="24"
+            height="24"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <path
+              d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"
+            ></path>
+          </svg>
+        </button>
       </div>
+
       <div class="article4">
         <div class="line"></div>
         {#if topArticles[3]?.multimedia.default.url}
-          <img src={topArticles[3]?.multimedia.default.url} alt="article1" />
+          <img
+            src={topArticles[3]?.multimedia.default.url}
+            alt={topArticles[3]?.headline?.main}
+          />
+        {:else}
+          <div class="alt-text">{topArticles[3]?.headline?.main}</div>
         {/if}
-
-        <p class="articleTitle">
-          {topArticles[3]?.headline?.main}
-        </p>
+        <p class="articleTitle">{topArticles[3]?.headline?.main}</p>
         <div class="read-text">8 min read</div>
         <div>
-          <p>
-            {topArticles[3]?.abstract}
-          </p>
+          <p>{topArticles[3]?.abstract}</p>
         </div>
+        <button
+          class="comment-button"
+          on:click={() => openSidebar(topArticles[3])}
+        >
+          <span class="comment-count">{topArticles[3].commentCount}</span>
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="24"
+            height="24"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <path
+              d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"
+            ></path>
+          </svg>
+        </button>
       </div>
+
       <div class="article5">
         <div class="line"></div>
         {#if topArticles[4]?.multimedia.default.url}
-          <img src={topArticles[4]?.multimedia.default.url} alt="article1" />
+          <img
+            src={topArticles[4]?.multimedia.default.url}
+            alt={topArticles[4]?.headline?.main}
+          />
+        {:else}
+          <div class="alt-text">{topArticles[4]?.headline?.main}</div>
         {/if}
-
         <h3>{topArticles[4]?.headline?.main}</h3>
         <div class="read-text">4 min read</div>
         <div>
-          <p>
-            {topArticles[4]?.abstract}
-          </p>
+          <p>{topArticles[4]?.abstract}</p>
         </div>
+        <button
+          class="comment-button"
+          on:click={() => openSidebar(topArticles[4])}
+        >
+          <span class="comment-count">{topArticles[4].commentCount}</span>
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="24"
+            height="24"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <path
+              d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"
+            ></path>
+          </svg>
+        </button>
       </div>
+
       <div class="article6">
         <div class="line"></div>
-
         {#if topArticles[5]?.multimedia.default.url}
-          <img src={topArticles[5]?.multimedia.default.url} alt="article1" />
+          <img
+            src={topArticles[5]?.multimedia.default.url}
+            alt={topArticles[5]?.headline?.main}
+          />
+        {:else}
+          <div class="alt-text">{topArticles[5]?.headline?.main}</div>
         {/if}
-
         <h2>{topArticles[5]?.headline?.main}</h2>
         <div class="read-text">2 min read</div>
         <div>
-          <p>
-            {topArticles[5]?.abstract}
-          </p>
+          <p>{topArticles[5]?.abstract}</p>
         </div>
+        <button
+          class="comment-button"
+          on:click={() => openSidebar(topArticles[5])}
+        >
+          <span class="comment-count">{topArticles[5].commentCount}</span>
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="24"
+            height="24"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <path
+              d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"
+            ></path>
+          </svg>
+        </button>
       </div>
     </div>
   {:else}
     <p>No articles available</p>
   {/if}
 </main>
+
+{#if isSidebarOpen}
+  <div class="sidebar-overlay"></div>
+  <div class="sidebar">
+    <button class="close-button" on:click={closeSidebar}>×</button>
+    <h2>{selectedArticle?.headline.main}</h2>
+    <div class="sidebar-title-line"></div>
+    <h3 class="comment-heading">
+      Comments <span class="comment-count"
+        >{comments.filter((c) => c.articleID === selectedArticle?._id)
+          .length}</span
+      >
+    </h3>
+    <div class="comment-form">
+      <!-- where we submit form -->
+      <form on:submit|preventDefault={handleCommentSubmit}>
+        <input
+          name="Write Something"
+          type="text"
+          bind:value={inputValue}
+          placeholder="Write your comment here..."
+        />
+        <!-- button to submit comment -->
+        <button class="submit-button" type="submit">Submit</button>
+      </form>
+    </div>
+    <div class="comment-container">
+      <!-- fetch all comments specific to that article -->
+      {#each comments.filter((c) => !c.parentId && c.articleID === selectedArticle?._id) as comment (comment.commentId)}
+        <div class="comment">
+          <p class="user">{comment.user}</p>
+          {#if comment.deleted === false}
+            <p>{comment.text}</p>
+            <p class="date">{comment.datePosted}</p>
+            <button
+              class="reply-button"
+              on:click={() => (replyingTo = comment.commentId)}>Reply</button
+            >
+            {#if userType == "mod"}
+              <button on:click={() => deleteComment(comment.commentId)}>
+                Delete Comment</button
+              >
+            {/if}
+          {:else}
+            <p>Comment was deleted</p>
+          {/if}
+          {#if replyingTo === comment.commentId}
+            <form
+              class="reply-form"
+              on:submit|preventDefault={() =>
+                handleReplySubmit(comment.commentId)}
+            >
+              <input
+                type="text"
+                bind:value={replyInputValue}
+                placeholder="Write your reply..."
+              />
+              <button type="submit" class="submit-button">Submit</button>
+            </form>
+          {/if}
+          <div class="replies" style="margin-left: 2rem;">
+            {#each getReplies(comment.commentId) as reply (reply.commentId)}
+              <div class="comment">
+                <p class="user">{reply.user}</p>
+                {#if reply.deleted === false}
+                  <p>{reply.text}</p>
+                  <p class="date">{reply.datePosted}</p>
+                  <button
+                    class="reply-button"
+                    on:click={() => (replyingTo = reply.commentId)}
+                    >Reply</button
+                  >
+                  {#if userType === "mod"}
+                    <button on:click={() => deleteComment(reply.commentId)}>
+                      Delete Comment</button
+                    >
+                  {/if}
+                {:else}
+                  <p>Comment was deleted</p>
+                {/if}
+                {#if replyingTo === reply.commentId}
+                  <form
+                    class="reply-form"
+                    on:submit|preventDefault={() =>
+                      handleReplySubmit(reply.commentId)}
+                  >
+                    <input
+                      type="text"
+                      bind:value={replyInputValue}
+                      placeholder="Write your reply..."
+                    />
+                    <button type="submit" class="submit-button">Submit</button>
+                  </form>
+                {/if}
+              </div>
+            {/each}
+          </div>
+        </div>
+      {/each}
+    </div>
+  </div>
+{/if}
