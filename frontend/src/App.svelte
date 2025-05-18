@@ -3,9 +3,9 @@
   import Date from "./Date.svelte";
   import logo from "./assets/NewYorkTimes.svg.png";
   import "./app.css";
-  import { stringify } from "postcss";
 
   interface Article {
+    _id: string;
     headline: { main: string };
     abstract: string;
     multimedia: {
@@ -17,12 +17,13 @@
 
   interface Comment {
     commentId: number;
-    user:string; // will be updated to User Interface 
-    userType: string;
+    user: string; // will be updated to User Interface
     text: string;
     datePosted: number;
     deleted: boolean;
+    articleID: string;
   }
+  let userType = ""; // update this later when login logic is done
 
   let comments: Comment[] = [];
   let commentID = 0;
@@ -41,35 +42,41 @@
     };
   }
 
- 
-  async function loadComments () {
-    try{
-      const response = await fetch(`http://localhost:8000/fetchComments`)
+  async function loadComments(selectedArticle: Article | null) {
+    if (!selectedArticle) return;
+    try {
+      let currArticleId = selectedArticle._id;
+      let currArticleIdTitle = selectedArticle.headline.main;
+      console.log(currArticleId);
+      console.log(currArticleIdTitle);
+
+      const response = await fetch(
+        `http://localhost:8000/fetchComments/${currArticleId}`
+      );
       const fetchedComments = await response.json();
       comments = fetchedComments;
-      //console.log(comments[0])
-
     } catch (error) {
-      console.error("An Error Occured fetching comments")
-    } 
+      console.error("An Error Occured fetching comments");
+    }
   }
 
-  async function deleteComment (id:number) {
+  async function deleteComment(id: number) {
     try {
       await fetch(`http://localhost:8000/deleteComment/${id}`, {
-        method: 'DELETE'
-      })
-      loadComments();
-      
+        method: "DELETE",
+      });
+      loadComments(selectedArticle);
     } catch (error) {
-      console.error("Error Deleting Comment")
+      console.error("Error Deleting Comment");
     }
   }
 
   function openSidebar(article: Article) {
     selectedArticle = article;
+    console.log(article.headline);
     isSidebarOpen = true;
-    loadComments(); 
+    loadComments(selectedArticle);
+    inputValue = "";
   }
 
   function closeSidebar() {
@@ -81,7 +88,6 @@
 
   async function handleCommentSubmit() {
     console.log("clicked the comment submission");
-    console.log(inputValue);
 
     try {
       await fetch("http://localhost:8000/addComment", {
@@ -92,19 +98,19 @@
         body: JSON.stringify({
           commentId: commentID,
           user: "User sfsths",
-          userType: "",
           text: inputValue,
           datePosted: "Today at this time",
           deleted: false,
+          articleID: selectedArticle?._id,
         }),
       });
-      commentID += 1; 
+      commentID += 1;
     } catch (error) {
       console.error("error submitting form", error);
     }
 
     inputValue = "";
-    loadComments();
+    loadComments(selectedArticle);
   }
 
   onMount(async () => {
@@ -122,7 +128,6 @@
       }
 
       loading = false;
-
     } catch (error) {
       console.error("Failed to fetch articles:", error);
       error = error instanceof Error ? error.message : "Unknown error occurred";
@@ -264,34 +269,43 @@
 </main>
 
 {#if isSidebarOpen}
-  <div class="sidebar-overlay"> </div>
+  <div class="sidebar-overlay"></div>
   <div class="sidebar">
     <button class="close-button" on:click={closeSidebar}>×</button>
+    <h2>{selectedArticle?.headline.main}</h2>
     <h3>Add Comment</h3>
     <div class="comment-form">
       <form on:submit|preventDefault={handleCommentSubmit}>
-        <input name="Write Something" type="text" bind:value={inputValue} />
+        <input
+          name="Write Something"
+          type="text"
+          bind:value={inputValue}
+          placeholder="Write your comment here..."
+        />
         <button class="submit-button" type="submit">Submit</button>
       </form>
     </div>
     <div class="comment-container">
       {#each comments as comment}
-        {#if comment.deleted === false}
-          <p> {comment.user}</p>
-          <p> {comment.text}</p>
-          <p> {comment.datePosted}</p>
-          {#if comment.userType === "mod"}
-            <button on:click={() => {console.log('comment to delete', comment.commentId); deleteComment(comment.commentId)}}> Delete Comment </button>
+        <div class="comment">
+          {#if comment.deleted === false && comment.articleID === selectedArticle?._id}
+            <p class="user">{comment.user}</p>
+            <p>{comment.text}</p>
+            <p class="date">{comment.datePosted}</p>
+
+            {#if userType === "mod"}
+              <button
+                class="delete-button"
+                on:click={() => deleteComment(comment.commentId)}
+              >
+                Delete Comment
+              </button>
+            {/if}
+          {:else}
+            <p>Comment was deleted by moderator</p>
           {/if}
-        {:else}
-          <p> {comment.commentId} was deleted by MOD</p>  
-        {/if}
-
-       
-
+        </div>
       {/each}
-     
-
     </div>
   </div>
 {/if}

@@ -79,13 +79,6 @@ def get_article():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
-@app.route('/fetchComments')
-def get_comments():
-    try:
-        comments = list(collection.find({}, {'_id': 0}))  
-        return jsonify(comments)
-    except Exception as e: 
-        return jsonify({'error': str(e)}), 500
 
 @app.route('/addComment', methods=['POST'])
 def add_comment():
@@ -104,6 +97,15 @@ def delete_comment(commentId):
     except Exception as e: 
         return jsonify({'error': str(e)}), 500
 
+@app.route('/fetchComments/<path:article_id>', methods=['GET'])
+def get_comments_by_article(article_id):
+    try:
+        collection = db['comments']
+        comments = list(collection.find({'articleID': article_id}, {'_id': 0}))
+        return jsonify(comments)
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=8000)
+

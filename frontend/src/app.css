@@ -190,12 +190,117 @@ nav {
   width: 25%;
   height: 100vh;
   background: white;
-  padding: 2rem;
+  padding: 1.5rem;
   box-shadow: -2px 0 5px rgba(0, 0, 0, 0.1);
   z-index: 1001;
   display: flex;
   flex-direction: column;
   gap: 1rem;
+  font-family: Georgia;
+}
+
+.comment-form {
+  padding: 1rem;
+  background: #f8f9fa;
+  border-radius: 8px;
+  margin-bottom: 1rem;
+}
+
+.comment-form input {
+  width: 100%;
+  padding: 0.75rem;
+  border: 1px solid #e0e0e0;
+  border-radius: 4px;
+  margin-bottom: 1rem;
+  font-family: Georgia;
+  font-size: 0.9rem;
+}
+
+.submit-button {
+  padding: 0.5rem 1rem;
+  background: #1a73e8;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background 0.2s;
+  font-family: Georgia;
+  font-size: 0.9rem;
+  width: 100%;
+}
+
+.submit-button:hover {
+  background: #1557b0;
+}
+
+.comment-container {
+  flex: 1;
+  overflow-y: auto;
+  padding-right: 0.5rem;
+  margin-top: 1rem;
+}
+
+.comment-container::-webkit-scrollbar {
+  width: 8px;
+}
+
+.comment-container::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 4px;
+}
+
+.comment-container::-webkit-scrollbar-thumb {
+  background: #888;
+  border-radius: 4px;
+}
+
+.comment-container::-webkit-scrollbar-thumb:hover {
+  background: #555;
+}
+
+.comment {
+  padding: 1rem 0;
+  margin-bottom: 0;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.comment:last-child {
+  border-bottom: none;
+}
+
+.comment p {
+  margin: 0.25rem 0;
+  line-height: 1.4;
+  font-size: 0.9rem;
+}
+
+.comment .user {
+  font-weight: 500;
+  color: #1a73e8;
+  font-size: 0.85rem;
+}
+
+.comment .date {
+  font-size: 0.75rem;
+  color: #666;
+  margin-top: 0.25rem;
+}
+
+.delete-button {
+  background: none;
+  color: #666;
+  border: none;
+  padding: 0.25rem 0;
+  cursor: pointer;
+  transition: color 0.2s;
+  margin-top: 0.5rem;
+  font-family: Georgia;
+  font-size: 0.8rem;
+  text-decoration: underline;
+}
+
+.delete-button:hover {
+  color: #333;
 }
 
 .close-button {
@@ -207,35 +312,19 @@ nav {
   font-size: 1.5rem;
   cursor: pointer;
   color: #666;
+  font-family: Georgia;
+  padding: 0.5rem;
 }
 
-.comment-form {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
+.close-button:hover {
+  color: #333;
 }
 
-textarea {
-  width: 100%;
-  height: 150px;
-  padding: 1rem;
-  border: 1px solid #ddd;
-  border-radius: 4px;
-  resize: none;
-}
-
-.submit-button {
-  padding: 0.75rem;
-  background: #1a73e8;
-  color: white;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-  transition: background 0.2s;
-}
-
-.submit-button:hover {
-  background: #1557b0;
+.sidebar h3 {
+  font-size: 1.1rem;
+  font-weight: 500;
+  margin-bottom: 0.5rem;
+  color: #333;
 }
 
 // media queries
