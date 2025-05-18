@@ -3,6 +3,7 @@
   import Date from "./Date.svelte";
   import logo from "./assets/NewYorkTimes.svg.png";
   import "./app.css";
+  import mockArticles from "./mockArticles.json";
 
   interface Article {
     _id: string;
@@ -18,11 +19,13 @@
 
   interface Comment {
     commentId: number;
-    user: string; // will be updated to User Interface
+    user: string;
     text: string;
     datePosted: number;
     deleted: boolean;
     articleID: string;
+    parentId?: number; // for replies
+    replies?: Comment[]; // for nested replies
   }
   let userType = ""; // update this later when login logic is done
 
@@ -36,6 +39,9 @@
   let error = "";
   let isSidebarOpen = false;
   let selectedArticle: Article | null = null;
+
+  let replyingTo: number | null = null;
+  let replyInputValue: string = "";
 
   interface ArticalResponse {
     response: {
@@ -133,30 +139,68 @@
     loadComments(selectedArticle?._id ?? null);
   }
 
-  onMount(async () => {
+  async function handleReplySubmit(parentId: number) {
     try {
-      const response = await fetch("http://localhost:8000/getArticles");
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-      articles = await response.json();
-
-      if (articles?.response?.docs) {
-        for (let i = 0; i < 6; i++) {
-          articles.response.docs[i].commentCount = await articleCommentCount(
-            articles?.response.docs[i]._id
-          );
-          topArticles.push(articles?.response.docs[i]);
-          //console.log(await articleCommentCount(articles?.response.docs[i]._id))
-        }
-      }
-
-      loading = false;
+      await fetch("http://localhost:8000/addComment", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          commentId: commentID,
+          user: "User sfsths",
+          text: replyInputValue,
+          datePosted: "Today at this time",
+          deleted: false,
+          articleID: selectedArticle?._id,
+          parentId: parentId,
+        }),
+      });
+      commentID += 1;
+      replyInputValue = "";
+      replyingTo = null;
+      loadComments(selectedArticle?._id ?? null);
     } catch (error) {
-      console.error("Failed to fetch articles:", error);
-      error = error instanceof Error ? error.message : "Unknown error occurred";
-      loading = false;
+      console.error("error submitting reply", error);
     }
+  }
+
+  function getReplies(parentId: number) {
+    return comments.filter(
+      (c) => c.parentId === parentId && c.articleID === selectedArticle?._id
+    );
+  }
+// FOR WHEN WE ARE USING THE API ENDPOING
+//   // onMount(async () => {
+//   try {
+//     const response = await fetch("http://localhost:8000/getArticles");
+//     if (!response.ok) {
+//       throw new Error(`HTTP error! status: ${response.status}`);
+//     }
+//     articles = await response.json();
+
+//     if (articles?.response?.docs) {
+//       // Optionally, fetch comment counts for each article
+//       for (let i = 0; i < 6; i++) {
+//         articles.response.docs[i].commentCount = await articleCommentCount(
+//           articles?.response.docs[i]._id
+//         );
+//         topArticles.push(articles?.response.docs[i]);
+//       }
+//     }
+
+//     loading = false;
+//   } catch (error) {
+//     console.error("Failed to fetch articles:", error);
+//     error = error instanceof Error ? error.message : "Unknown error occurred";
+//     loading = false;
+//   }
+// // });
+
+  onMount(() => {
+    articles = { response: { docs: mockArticles } };
+    topArticles = mockArticles;
+    loading = false;
   });
 </script>
 
@@ -182,7 +226,12 @@
     <div class="grid-container" data-testid="grid-container">
       <div class="article1">
         {#if topArticles[0]?.multimedia.default.url}
-          <img src={topArticles[0]?.multimedia.default.url} alt="article1" />
+          <img
+            src={topArticles[0]?.multimedia.default.url}
+            alt={topArticles[0]?.headline?.main}
+          />
+        {:else}
+          <div class="alt-text">{topArticles[0]?.headline?.main}</div>
         {/if}
         <h2>{topArticles[0]?.headline?.main || "Loading..."}</h2>
         <div class="read-text">6 min read</div>
@@ -215,7 +264,12 @@
       <div class="article2">
         <div class="line"></div>
         {#if topArticles[1]?.multimedia.default.url}
-          <img src={topArticles[1]?.multimedia.default.url} alt="article1" />
+          <img
+            src={topArticles[1]?.multimedia.default.url}
+            alt={topArticles[1]?.headline?.main}
+          />
+        {:else}
+          <div class="alt-text">{topArticles[1]?.headline?.main}</div>
         {/if}
         <h1>{topArticles[1]?.headline?.main}</h1>
         <div class="read-text">5 min read</div>
@@ -248,7 +302,12 @@
       <div class="article3">
         <div class="line"></div>
         {#if topArticles[2]?.multimedia.default.url}
-          <img src={topArticles[2]?.multimedia.default.url} alt="article1" />
+          <img
+            src={topArticles[2]?.multimedia.default.url}
+            alt={topArticles[2]?.headline?.main}
+          />
+        {:else}
+          <div class="alt-text">{topArticles[2]?.headline?.main}</div>
         {/if}
         <p class="articleTitle">{topArticles[2]?.headline?.main}</p>
         <div class="read-text">10 min read</div>
@@ -281,7 +340,12 @@
       <div class="article4">
         <div class="line"></div>
         {#if topArticles[3]?.multimedia.default.url}
-          <img src={topArticles[3]?.multimedia.default.url} alt="article1" />
+          <img
+            src={topArticles[3]?.multimedia.default.url}
+            alt={topArticles[3]?.headline?.main}
+          />
+        {:else}
+          <div class="alt-text">{topArticles[3]?.headline?.main}</div>
         {/if}
         <p class="articleTitle">{topArticles[3]?.headline?.main}</p>
         <div class="read-text">8 min read</div>
@@ -314,7 +378,12 @@
       <div class="article5">
         <div class="line"></div>
         {#if topArticles[4]?.multimedia.default.url}
-          <img src={topArticles[4]?.multimedia.default.url} alt="article1" />
+          <img
+            src={topArticles[4]?.multimedia.default.url}
+            alt={topArticles[4]?.headline?.main}
+          />
+        {:else}
+          <div class="alt-text">{topArticles[4]?.headline?.main}</div>
         {/if}
         <h3>{topArticles[4]?.headline?.main}</h3>
         <div class="read-text">4 min read</div>
@@ -347,7 +416,12 @@
       <div class="article6">
         <div class="line"></div>
         {#if topArticles[5]?.multimedia.default.url}
-          <img src={topArticles[5]?.multimedia.default.url} alt="article1" />
+          <img
+            src={topArticles[5]?.multimedia.default.url}
+            alt={topArticles[5]?.headline?.main}
+          />
+        {:else}
+          <div class="alt-text">{topArticles[5]?.headline?.main}</div>
         {/if}
         <h2>{topArticles[5]?.headline?.main}</h2>
         <div class="read-text">2 min read</div>
@@ -395,6 +469,7 @@
       >
     </h3>
     <div class="comment-form">
+      <!-- where we submit form -->
       <form on:submit|preventDefault={handleCommentSubmit}>
         <input
           name="Write Something"
@@ -402,29 +477,81 @@
           bind:value={inputValue}
           placeholder="Write your comment here..."
         />
+        <!-- button to submit comment -->
         <button class="submit-button" type="submit">Submit</button>
       </form>
     </div>
     <div class="comment-container">
-      {#each comments as comment}
+      <!-- fetch all comments specific to that article -->
+      {#each comments.filter((c) => !c.parentId && c.articleID === selectedArticle?._id) as comment (comment.commentId)}
         <div class="comment">
-          {#if comment.deleted === false && comment.articleID === selectedArticle?._id}
-            <p class="user">{comment.user}</p>
+          <p class="user">{comment.user}</p>
+          {#if comment.deleted === false}
             <p>{comment.text}</p>
             <p class="date">{comment.datePosted}</p>
-
-            {#if userType === "mod"}
-              <button
-                class="delete-button"
-                on:click={() => deleteComment(comment.commentId)}
+            <button
+              class="reply-button"
+              on:click={() => (replyingTo = comment.commentId)}>Reply</button
+            >
+            {#if userType == "mod"}
+              <button on:click={() => deleteComment(comment.commentId)}>
+                Delete Comment</button
               >
-                Delete Comment
-              </button>
             {/if}
           {:else}
-            <p class="user">{comment.user}</p>
-            <p class="deleted-text">Comment was deleted by moderator</p>
+            <p>Comment was deleted</p>
           {/if}
+          {#if replyingTo === comment.commentId}
+            <form
+              class="reply-form"
+              on:submit|preventDefault={() =>
+                handleReplySubmit(comment.commentId)}
+            >
+              <input
+                type="text"
+                bind:value={replyInputValue}
+                placeholder="Write your reply..."
+              />
+              <button type="submit" class="submit-button">Submit</button>
+            </form>
+          {/if}
+          <div class="replies" style="margin-left: 2rem;">
+            {#each getReplies(comment.commentId) as reply (reply.commentId)}
+              <div class="comment">
+                <p class="user">{reply.user}</p>
+                {#if reply.deleted === false}
+                  <p>{reply.text}</p>
+                  <p class="date">{reply.datePosted}</p>
+                  <button
+                    class="reply-button"
+                    on:click={() => (replyingTo = reply.commentId)}
+                    >Reply</button
+                  >
+                  {#if userType === "mod"}
+                    <button on:click={() => deleteComment(reply.commentId)}>
+                      Delete Comment</button
+                    >
+                  {/if}
+                {:else}
+                  <p>Comment was deleted</p>
+                {/if}
+                {#if replyingTo === reply.commentId}
+                  <form
+                    class="reply-form"
+                    on:submit|preventDefault={() =>
+                      handleReplySubmit(reply.commentId)}
+                  >
+                    <input
+                      type="text"
+                      bind:value={replyInputValue}
+                      placeholder="Write your reply..."
+                    />
+                    <button type="submit" class="submit-button">Submit</button>
+                  </form>
+                {/if}
+              </div>
+            {/each}
+          </div>
         </div>
       {/each}
     </div>
