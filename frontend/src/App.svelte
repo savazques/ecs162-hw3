@@ -18,6 +18,7 @@
   interface Comment {
     commentId: number;
     user:string; // will be updated to User Interface 
+    userType: string;
     text: string;
     datePosted: number;
     deleted: boolean;
@@ -91,6 +92,7 @@
         body: JSON.stringify({
           commentId: commentID,
           user: "User sfsths",
+          userType: "",
           text: inputValue,
           datePosted: "Today at this time",
           deleted: false,
@@ -278,8 +280,14 @@
           <p> {comment.user}</p>
           <p> {comment.text}</p>
           <p> {comment.datePosted}</p>
-          <button on:click={() => {console.log('comment to delete', comment.commentId); deleteComment(comment.commentId)}}> Delete Comment </button>
+          {#if comment.userType === "mod"}
+            <button on:click={() => {console.log('comment to delete', comment.commentId); deleteComment(comment.commentId)}}> Delete Comment </button>
+          {/if}
+        {:else}
+          <p> {comment.commentId} was deleted by MOD</p>  
         {/if}
+
+       
 
       {/each}
      
