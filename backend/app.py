@@ -31,9 +31,12 @@ oauth.register(
 @app.route('/')
 def home():
     user = session.get('user')
+    print(user)
     if user:
-        return f"{user['email']}"
-        return f"<h2>Logged in as {user['email']}</h2><a href='/logout'>Logout</a>"
+        return jsonify ({
+            "type": user.get('name'),
+            "email": user.get('email')
+        })
     return '<a href="/login">Login with Dex</a>'
 
 @app.route('/login')

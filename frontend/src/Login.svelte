@@ -4,21 +4,24 @@
   let loading = true;
   let name = "";
   let error = "";
+  let user = null
   onMount(async () => {
     try {
       const response = await fetch("http://localhost:8000/", {
         credentials: "include",
       });
-      console.log(response.headers, 'here is the response')
+      console.log(response, 'here is the response')
 
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
-      let res = await response.text();
-      console.log("Response:", res);
+      user = await response.json();
+      console.log("username type:", user.type);
+      console.log("username email:", user.email);
 
-      if (!res.match("Login with Dex")) {
-        name = res;
+
+      if (!user.email.match("Login with Dex")) {
+        name = user.email;
       }
       loading = false;
     } catch (error) {
