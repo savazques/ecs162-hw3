@@ -42,6 +42,9 @@ oauth.register(
     device_authorization_endpoint="http://dex:5556/device/code",
     client_kwargs={'scope': 'openid email profile'}
 )
+@app.route('/ping')
+def ping():
+    return 'pong', 200
 
 @app.route('/')
 def home():

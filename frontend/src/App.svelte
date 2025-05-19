@@ -229,6 +229,7 @@
     <div class="date-container">
       <Date />
     </div>
+    <h1>Welcome to the News App</h1>
     <div class="logo-container">
       <a href="https://www.nytimes.com/">
         <img src={logo} alt="NYTLogo" />
