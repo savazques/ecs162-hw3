@@ -9,7 +9,7 @@ from pymongo import MongoClient
 app = Flask(__name__)
 app.secret_key = os.urandom(24)
 api_key = os.getenv('NYT_API_KEY')
-CORS(app)
+CORS(app,supports_credentials=True)
 
 oauth = OAuth(app)
 try: 
@@ -46,29 +46,36 @@ oauth.register(
 @app.route('/')
 def home():
     user = session.get('user')
+    print(user)
     if user:
-        return f"<h2>Logged in as {user['email']}</h2><a href='/logout'>Logout</a>"
+        return jsonify ({
+            "type": user.get('name'),
+            "email": user.get('email')
+        })
     return '<a href="/login">Login with Dex</a>'
 
 @app.route('/login')
 def login():
     session['nonce'] = nonce
+    print(session['nonce'])
     redirect_uri = 'http://localhost:8000/authorize'
     return oauth.flask_app.authorize_redirect(redirect_uri, nonce=nonce)
 
 @app.route('/authorize')
 def authorize():
     token = oauth.flask_app.authorize_access_token()
+    print(token)
     nonce = session.get('nonce')
 
     user_info = oauth.flask_app.parse_id_token(token, nonce=nonce)  # or use .get('userinfo').json()
     session['user'] = user_info
-    return redirect('/')
+    print(session['user'], "session stuff")
+    return redirect('http://localhost:5173/')
 
 @app.route('/logout')
 def logout():
     session.clear()
-    return redirect('/')
+    return redirect('http://localhost:5173/')
 
 @app.route('/getArticles')
 def get_article():

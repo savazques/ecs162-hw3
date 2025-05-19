@@ -3,7 +3,10 @@
   import Date from "./Date.svelte";
   import logo from "./assets/NewYorkTimes.svg.png";
   import "./app.css";
+  import Login from "./Login.svelte";
+  import { user } from "./stores/user";
   import mockArticles from "./mockArticles.json";
+  import CommentIcon from "./CommentIcon.svelte";
 
   interface Article {
     _id: string;
@@ -27,7 +30,6 @@
     parentId?: number; // for replies
     replies?: Comment[]; // for nested replies
   }
-  let userType = ""; // update this later when login logic is done
 
   let comments: Comment[] = [];
   let commentID = 0;
@@ -113,7 +115,7 @@
         },
         body: JSON.stringify({
           commentId: commentID,
-          user: "User sfsths",
+          user: $user?.email,
           text: inputValue,
           datePosted: "Today at this time",
           deleted: false,
@@ -146,9 +148,10 @@
         headers: {
           "Content-Type": "application/json",
         },
+
         body: JSON.stringify({
           commentId: commentID,
-          user: "User sfsths",
+          user: $user?.email,
           text: replyInputValue,
           datePosted: "Today at this time",
           deleted: false,
@@ -156,9 +159,11 @@
           parentId: parentId,
         }),
       });
+      console.log($user?.email, "this is the user");
       commentID += 1;
       replyInputValue = "";
       replyingTo = null;
+      console.log("SUBMITTING A COMMENT");
       loadComments(selectedArticle?._id ?? null);
     } catch (error) {
       console.error("error submitting reply", error);
@@ -170,32 +175,32 @@
       (c) => c.parentId === parentId && c.articleID === selectedArticle?._id
     );
   }
-// FOR WHEN WE ARE USING THE API ENDPOING
-//   // onMount(async () => {
-//   try {
-//     const response = await fetch("http://localhost:8000/getArticles");
-//     if (!response.ok) {
-//       throw new Error(`HTTP error! status: ${response.status}`);
-//     }
-//     articles = await response.json();
+  // FOR WHEN WE ARE USING THE API ENDPOING
+  //   // onMount(async () => {
+  //   try {
+  //     const response = await fetch("http://localhost:8000/getArticles");
+  //     if (!response.ok) {
+  //       throw new Error(`HTTP error! status: ${response.status}`);
+  //     }
+  //     articles = await response.json();
 
-//     if (articles?.response?.docs) {
-//       // Optionally, fetch comment counts for each article
-//       for (let i = 0; i < 6; i++) {
-//         articles.response.docs[i].commentCount = await articleCommentCount(
-//           articles?.response.docs[i]._id
-//         );
-//         topArticles.push(articles?.response.docs[i]);
-//       }
-//     }
+  //     if (articles?.response?.docs) {
+  //       // Optionally, fetch comment counts for each article
+  //       for (let i = 0; i < 6; i++) {
+  //         articles.response.docs[i].commentCount = await articleCommentCount(
+  //           articles?.response.docs[i]._id
+  //         );
+  //         topArticles.push(articles?.response.docs[i]);
+  //       }
+  //     }
 
-//     loading = false;
-//   } catch (error) {
-//     console.error("Failed to fetch articles:", error);
-//     error = error instanceof Error ? error.message : "Unknown error occurred";
-//     loading = false;
-//   }
-// // });
+  //     loading = false;
+  //   } catch (error) {
+  //     console.error("Failed to fetch articles:", error);
+  //     error = error instanceof Error ? error.message : "Unknown error occurred";
+  //     loading = false;
+  //   }
+  // // });
 
   onMount(() => {
     articles = { response: { docs: mockArticles } };
@@ -213,6 +218,9 @@
       <a href="https://www.nytimes.com/">
         <img src={logo} alt="NYTLogo" />
       </a>
+    </div>
+    <div class="login-container">
+      <Login />
     </div>
   </nav>
 </header>
@@ -243,21 +251,7 @@
           on:click={() => openSidebar(topArticles[0])}
         >
           <span class="comment-count">{topArticles[0].commentCount}</span>
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            width="24"
-            height="24"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-          >
-            <path
-              d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"
-            ></path>
-          </svg>
+          <CommentIcon />
         </button>
       </div>
 
@@ -281,21 +275,7 @@
           on:click={() => openSidebar(topArticles[1])}
         >
           <span class="comment-count">{topArticles[1].commentCount}</span>
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            width="24"
-            height="24"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-          >
-            <path
-              d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"
-            ></path>
-          </svg>
+          <CommentIcon />
         </button>
       </div>
 
@@ -319,21 +299,7 @@
           on:click={() => openSidebar(topArticles[2])}
         >
           <span class="comment-count">{topArticles[2].commentCount}</span>
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            width="24"
-            height="24"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-          >
-            <path
-              d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"
-            ></path>
-          </svg>
+          <CommentIcon />
         </button>
       </div>
 
@@ -357,21 +323,7 @@
           on:click={() => openSidebar(topArticles[3])}
         >
           <span class="comment-count">{topArticles[3].commentCount}</span>
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            width="24"
-            height="24"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-          >
-            <path
-              d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"
-            ></path>
-          </svg>
+          <CommentIcon />
         </button>
       </div>
 
@@ -395,21 +347,7 @@
           on:click={() => openSidebar(topArticles[4])}
         >
           <span class="comment-count">{topArticles[4].commentCount}</span>
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            width="24"
-            height="24"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-          >
-            <path
-              d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"
-            ></path>
-          </svg>
+          <CommentIcon />
         </button>
       </div>
 
@@ -433,21 +371,7 @@
           on:click={() => openSidebar(topArticles[5])}
         >
           <span class="comment-count">{topArticles[5].commentCount}</span>
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            width="24"
-            height="24"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-          >
-            <path
-              d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"
-            ></path>
-          </svg>
+          <CommentIcon />
         </button>
       </div>
     </div>
@@ -468,19 +392,25 @@
           .length}</span
       >
     </h3>
-    <div class="comment-form">
-      <!-- where we submit form -->
-      <form on:submit|preventDefault={handleCommentSubmit}>
-        <input
-          name="Write Something"
-          type="text"
-          bind:value={inputValue}
-          placeholder="Write your comment here..."
-        />
-        <!-- button to submit comment -->
-        <button class="submit-button" type="submit">Submit</button>
-      </form>
-    </div>
+    {#if !$user}
+      <p>Login to post a commment</p>
+      <Login />
+    {:else}
+      <div class="comment-form">
+        <!-- where we submit form -->
+        <form on:submit|preventDefault={handleCommentSubmit}>
+          <input
+            name="Write Something"
+            type="text"
+            bind:value={inputValue}
+            placeholder="Write your comment here..."
+          />
+          <!-- button to submit comment -->
+          <button class="submit-button" type="submit">Submit</button>
+        </form>
+      </div>
+    {/if}
+
     <div class="comment-container">
       <!-- fetch all comments specific to that article -->
       {#each comments.filter((c) => !c.parentId && c.articleID === selectedArticle?._id) as comment (comment.commentId)}
@@ -489,19 +419,23 @@
           {#if comment.deleted === false}
             <p>{comment.text}</p>
             <p class="date">{comment.datePosted}</p>
-            <button
-              class="reply-button"
-              on:click={() => (replyingTo = comment.commentId)}>Reply</button
-            >
-            {#if userType == "mod"}
-              <button on:click={() => deleteComment(comment.commentId)}>
-                Delete Comment</button
+            {#if $user}
+              <button
+                class="reply-button"
+                on:click={() => (replyingTo = comment.commentId)}
               >
+                Reply
+              </button>
+            {/if}
+            {#if $user && $user.type == "moderator"}
+              <button on:click={() => deleteComment(comment.commentId)}>
+                Delete Comment
+              </button>
             {/if}
           {:else}
             <p>Comment was deleted</p>
           {/if}
-          {#if replyingTo === comment.commentId}
+          {#if $user && replyingTo === comment.commentId}
             <form
               class="reply-form"
               on:submit|preventDefault={() =>
@@ -522,20 +456,23 @@
                 {#if reply.deleted === false}
                   <p>{reply.text}</p>
                   <p class="date">{reply.datePosted}</p>
-                  <button
-                    class="reply-button"
-                    on:click={() => (replyingTo = reply.commentId)}
-                    >Reply</button
-                  >
-                  {#if userType === "mod"}
-                    <button on:click={() => deleteComment(reply.commentId)}>
-                      Delete Comment</button
+                  {#if $user}
+                    <button
+                      class="reply-button"
+                      on:click={() => (replyingTo = reply.commentId)}
                     >
+                      Reply
+                    </button>
+                  {/if}
+                  {#if $user && $user.type === "moderator"}
+                    <button on:click={() => deleteComment(reply.commentId)}>
+                      Delete Comment
+                    </button>
                   {/if}
                 {:else}
                   <p>Comment was deleted</p>
                 {/if}
-                {#if replyingTo === reply.commentId}
+                {#if $user && replyingTo === reply.commentId}
                   <form
                     class="reply-form"
                     on:submit|preventDefault={() =>

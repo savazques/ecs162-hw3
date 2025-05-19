@@ -29,6 +29,7 @@ nav {
   max-width: 100%;
   margin: 0 auto;
   padding: 0 1rem;
+  justify-content: space-between;
 }
 
 .date-container {
@@ -586,11 +587,6 @@ nav {
     padding: 0.5rem 0;
   }
 
-  nav {
-    flex-direction: column;
-    align-items: center;
-    padding: 0.5rem;
-  }
 
   .date-container {
     width: 100%;
