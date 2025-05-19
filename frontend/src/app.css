@@ -253,6 +253,7 @@ nav {
   overflow-y: auto;
   padding-right: 0.5rem;
   margin-top: 1rem;
+  padding-bottom: 3rem; 
 }
 
 .comment-container::-webkit-scrollbar {

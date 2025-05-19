@@ -32,7 +32,6 @@
   }
 
   let comments: Comment[] = [];
-  let commentID = 0;
 
   let articles: ArticalResponse | null = null;
   let topArticles: Article[] = [];
@@ -53,6 +52,7 @@
 
   async function loadComments(selectedArticle: string | null) {
     if (!selectedArticle) return;
+    console.log("ATTEMPTING TO LOAD COMMENT", selectedArticle);
     try {
       const response = await fetch(
         `http://localhost:8000/fetchComments/${selectedArticle}`
@@ -67,9 +67,15 @@
 
   async function deleteComment(id: number) {
     try {
+      console.log("comment to delete", id);
       await fetch(`http://localhost:8000/deleteComment/${id}`, {
         method: "DELETE",
       });
+      // Immediately update the UI by marking the comment as deleted
+      const commentToDelete = comments.find((c) => c.commentId === id);
+      if (commentToDelete) {
+        commentToDelete.deleted = true;
+      }
       if (selectedArticle) {
         loadComments(selectedArticle._id);
       }
@@ -96,7 +102,6 @@
     // call fetch article, with given articlename
     // get the length of the response
     // set that to commentCount for each article
-    console.log(articleId);
     let totalComments = await loadComments(articleId);
     if (totalComments) {
       return totalComments.length;
@@ -104,9 +109,20 @@
     return 0;
   }
 
+  function getTimeStamp() {
+    const now = new window.Date();
+    const month = now.getMonth() + 1;
+    const day = now.getDate();
+    const year = now.getFullYear();
+    const hours = now.getHours();
+    const minutes = now.getMinutes();
+    const seconds = now.getSeconds();
+    return `${month}/${day}/${year}, ${hours}:${seconds}`;
+  }
+
   async function handleCommentSubmit() {
     console.log("clicked the comment submission");
-
+    const commentIdentification = new window.Date();
     try {
       await fetch("http://localhost:8000/addComment", {
         method: "POST",
@@ -114,15 +130,14 @@
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          commentId: commentID,
+          commentId: commentIdentification.getTime(),
           user: $user?.email,
           text: inputValue,
-          datePosted: "Today at this time",
+          datePosted: getTimeStamp(),
           deleted: false,
           articleID: selectedArticle?._id,
         }),
       });
-      commentID += 1;
 
       // Update the comment count for the selected article
       if (selectedArticle) {
@@ -138,75 +153,75 @@
       console.error("error submitting form", error);
     }
     inputValue = "";
+    if (selectedArticle?._id) {
+      await articleCommentCount(selectedArticle._id);
+    }
     loadComments(selectedArticle?._id ?? null);
   }
 
   async function handleReplySubmit(parentId: number) {
+    const replyIdentification = new window.Date();
     try {
       await fetch("http://localhost:8000/addComment", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-
         body: JSON.stringify({
-          commentId: commentID,
+          commentId: replyIdentification.getTime(),
           user: $user?.email,
           text: replyInputValue,
-          datePosted: "Today at this time",
+          datePosted: getTimeStamp(),
           deleted: false,
           articleID: selectedArticle?._id,
           parentId: parentId,
         }),
       });
       console.log($user?.email, "this is the user");
-      commentID += 1;
       replyInputValue = "";
       replyingTo = null;
       console.log("SUBMITTING A COMMENT");
+      if (selectedArticle?._id) {
+        await articleCommentCount(selectedArticle._id);
+      }
       loadComments(selectedArticle?._id ?? null);
     } catch (error) {
       console.error("error submitting reply", error);
     }
   }
 
-  function getReplies(parentId: number) {
-    return comments.filter(
-      (c) => c.parentId === parentId && c.articleID === selectedArticle?._id
-    );
-  }
   // FOR WHEN WE ARE USING THE API ENDPOING
-  //   // onMount(async () => {
-  //   try {
-  //     const response = await fetch("http://localhost:8000/getArticles");
-  //     if (!response.ok) {
-  //       throw new Error(`HTTP error! status: ${response.status}`);
-  //     }
-  //     articles = await response.json();
+  onMount(async () => {
+    try {
+      const response = await fetch("http://localhost:8000/getArticles");
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      articles = await response.json();
 
-  //     if (articles?.response?.docs) {
-  //       // Optionally, fetch comment counts for each article
-  //       for (let i = 0; i < 6; i++) {
-  //         articles.response.docs[i].commentCount = await articleCommentCount(
-  //           articles?.response.docs[i]._id
-  //         );
-  //         topArticles.push(articles?.response.docs[i]);
-  //       }
-  //     }
+      if (articles?.response?.docs) {
+        // Optionally, fetch comment counts for each article
+        for (let i = 0; i < 6; i++) {
+          articles.response.docs[i].commentCount = await articleCommentCount(
+            articles?.response.docs[i]._id
+          );
+          topArticles.push(articles?.response.docs[i]);
+        }
+      }
 
-  //     loading = false;
-  //   } catch (error) {
-  //     console.error("Failed to fetch articles:", error);
-  //     error = error instanceof Error ? error.message : "Unknown error occurred";
-  //     loading = false;
-  //   }
-  // // });
-
-  onMount(() => {
-    articles = { response: { docs: mockArticles } };
-    topArticles = mockArticles;
-    loading = false;
+      loading = false;
+    } catch (error) {
+      console.error("Failed to fetch articles:", error);
+      error = error instanceof Error ? error.message : "Unknown error occurred";
+      loading = false;
+    }
   });
+
+  // onMount(() => {
+  //   articles = { response: { docs: mockArticles } };
+  //   topArticles = mockArticles;
+  //   loading = false;
+  // });
 </script>
 
 <header>
@@ -412,8 +427,7 @@
     {/if}
 
     <div class="comment-container">
-      <!-- fetch all comments specific to that article -->
-      {#each comments.filter((c) => !c.parentId && c.articleID === selectedArticle?._id) as comment (comment.commentId)}
+      {#each comments.filter((c) => c.parentId == null && c.articleID === selectedArticle?._id) as comment}
         <div class="comment">
           <p class="user">{comment.user}</p>
           {#if comment.deleted === false}
@@ -433,7 +447,7 @@
               </button>
             {/if}
           {:else}
-            <p>Comment was deleted</p>
+            <p>Comment was deleted by moderator</p>
           {/if}
           {#if $user && replyingTo === comment.commentId}
             <form
@@ -450,7 +464,7 @@
             </form>
           {/if}
           <div class="replies" style="margin-left: 2rem;">
-            {#each getReplies(comment.commentId) as reply (reply.commentId)}
+            {#each comments.filter((r) => r.parentId === comment.commentId) as reply}
               <div class="comment">
                 <p class="user">{reply.user}</p>
                 {#if reply.deleted === false}
@@ -470,7 +484,7 @@
                     </button>
                   {/if}
                 {:else}
-                  <p>Comment was deleted</p>
+                  <p>Comment was deleted by moderator</p>
                 {/if}
                 {#if $user && replyingTo === reply.commentId}
                   <form
