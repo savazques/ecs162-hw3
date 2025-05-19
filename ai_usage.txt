@@ -1,0 +1,5 @@
+For this assignment we utilized AI to helo guide throguh unknown errors and ambigous errors to direct us towards
+the root of the problem. In the beginning when setting up mongodb, it was difficult to understand what the errors were being
+thrown at us for. Another useful way was for syntax. In one instance we were trying to set have a variable be an array of  the Comment interface
+I was having trouble setting assigning that info after the comments were retrieved from the database, but but it gave me a short hand
+method by just setting comments = {the returned json data}. We primarily used claude and chat gpt for this assigning.
